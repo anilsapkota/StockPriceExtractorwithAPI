@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 POLYGON_API_KEY = os.getenv("POLYGON_API_KEY")
-print("API Key:", POLYGON_API_KEY)
 
 limit = 1000
 
@@ -56,4 +55,5 @@ def run_stock_job():
     print(f'Wrote {len(tickers)} rows to {output_csv}')
 
 
-
+if __name__ == '__main__':
+    run_stock_job
