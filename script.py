@@ -3,6 +3,7 @@ import openai
 import os
 import time
 import csv
+import snowflake.connector as sc 
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -53,7 +54,42 @@ def run_stock_job():
             writer.writerow(row)
 
     print(f'Wrote {len(tickers)} rows to {output_csv}')
+    load_to_snowflake(tickers,fieldnames)
+    print(f'Loaded {len(tickers)} rows into Snowflake table {os.getenv("SNOWFLAKE_TABLE")}')
+
+
+
+def load_to_snowflake(rows,fieldnames):
+    conn = sc.connect (
+
+        user= os.getenv('SNOWFLAKE_USER'),
+        password= os.getenv('SNOWFLAKE_PASSWORD'),
+        account = os.getenv('SNOWFLAKE_ACCOUNT'), 
+        warehouse = os.getenv('SNOWFLAKE_WAREHOUSE'),
+        database = os.getenv('SNOWFLAKE_DATABASE'),
+        schema = os.getenv('SNOWFLAKE_SCHEMA'),
+        role = os.getenv('SNOWFLAKE_ROLE'),
+
+    )
+
+    cur = conn.cursor()
+    data = [tuple(row.get(field, '') for field in fieldnames) for row in rows]
+
+    cur.executemany(
+        f"""
+            INSERT INTO {os.getenv('SNOWFLAKE_TABLE')} 
+            VALUES ({",".join(["%s"] * len(fieldnames))})
+        """,
+        data
+    )
+
+    cur.close()
+    conn.close()
+
+    
+    
+
 
 
 if __name__ == '__main__':
-    run_stock_job
+    run_stock_job()
