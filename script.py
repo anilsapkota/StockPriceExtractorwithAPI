@@ -4,6 +4,7 @@ import os
 import time
 import csv
 import snowflake.connector as sc 
+from datetime import datetime 
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -14,6 +15,7 @@ limit = 1000
 
 
 def run_stock_job():
+    DS = datetime.now().strftime('%Y-%m-%d')
     tickers = []
     url = f'https://api.massive.com/v3/reference/tickers?market=stocks&active=true&order=asc&limit={limit}&sort=ticker&apiKey={POLYGON_API_KEY}'
 
@@ -42,6 +44,7 @@ def run_stock_job():
     print("Example Ticker:", example_ticker)
 
     fieldnames = list(example_ticker.keys())
+    fieldnames.append('DS')
     print(fieldnames)
 
     output_csv = 'tickers.csv'
@@ -49,9 +52,14 @@ def run_stock_job():
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
+        # for t in tickers:
+        #     row = {key: t.get(key, '') for key in fieldnames}
+        #     row['DS'] = DS 
+        #     writer.writerow(row)
+
         for t in tickers:
-            row = {key: t.get(key, '') for key in fieldnames}
-            writer.writerow(row)
+            t['DS'] = DS
+            writer.writerow(t)
 
     print(f'Wrote {len(tickers)} rows to {output_csv}')
     load_to_snowflake(tickers,fieldnames)
